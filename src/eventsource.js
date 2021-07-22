@@ -477,8 +477,8 @@
   function XHRTransport() {
   }
 
-  XHRTransport.prototype.open = function (xhr, onStartCallback, onProgressCallback, onFinishCallback, url, withCredentials, headers) {
-    xhr.open("GET", url);
+  XHRTransport.prototype.open = function (xhr, onStartCallback, onProgressCallback, onFinishCallback, url, method, body, withCredentials, headers) {
+    xhr.open(method, url);
     var offset = 0;
     xhr.onprogress = function () {
       var responseText = xhr.responseText;
@@ -511,7 +511,7 @@
         xhr.setRequestHeader(name, headers[name]);
       }
     }
-    xhr.send();
+    xhr.send(body);
     return xhr;
   };
 
@@ -525,12 +525,14 @@
   function FetchTransport() {
   }
 
-  FetchTransport.prototype.open = function (xhr, onStartCallback, onProgressCallback, onFinishCallback, url, withCredentials, headers) {
+  FetchTransport.prototype.open = function (xhr, onStartCallback, onProgressCallback, onFinishCallback, url, method, body, withCredentials, headers) {
     var reader = null;
     var controller = new AbortController();
     var signal = controller.signal;
     var textDecoder = new TextDecoder();
     fetch(url, {
+      method: method,
+      body: body,
       headers: headers,
       credentials: withCredentials ? "include" : "same-origin",
       signal: signal,
@@ -746,6 +748,8 @@
     var wasActivity = false;
     var textLength = 0;
     var headers = options.headers || {};
+    var method = options.method || "GET";
+    var body = options.body;
     var TransportOption = options.Transport;
     var xhr = isFetchSupported && TransportOption == undefined ? undefined : new XHRWrapper(TransportOption != undefined ? new TransportOption() : getBestXHRTransport());
     var transport = TransportOption != null && typeof TransportOption !== "string" ? new TransportOption() : (xhr == undefined ? new FetchTransport() : new XHRTransport());
@@ -989,7 +993,7 @@
         }
       }
       try {
-        abortController = transport.open(xhr, onStart, onProgress, onFinish, requestURL, withCredentials, requestHeaders);
+        abortController = transport.open(xhr, onStart, onProgress, onFinish, requestURL, method, body, withCredentials, requestHeaders);
       } catch (error) {
         close();
         throw error;
